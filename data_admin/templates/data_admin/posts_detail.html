@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% if object %}
+    <div class="jumbotron">
+        <h2 >{{object.title}}</h2>
+        <p class="lead text-justify">{{object.text}}</p>
+        <p class="lead">
+          <a class="btn btn-light btn-lg" href="{{object.get_absolute_url}}" role="button">Читать далее</a>
+        </p>
+        <hr class="my-4">
+      </div>
+{% else %}
+    <li> 'Посты отсутствуют'
+{% endif %}
+
+{% endblock content %}
+
+

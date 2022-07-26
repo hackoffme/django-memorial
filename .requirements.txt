@@ -1,0 +1,5 @@
+django
+django-stubs
+pillow
+django-debug-toolbar
+pytils

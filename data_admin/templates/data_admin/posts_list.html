@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% if object_list %}
+    {% for item in object_list %}
+      <div class="jumbotron">
+          <h2 >{{item.title}}</h2>
+          <p class="lead text-justify">{{item.text|truncatewords:45}}</p>
+          <p class="lead">
+            <a class="btn btn-light btn-lg" href="{{item.get_absolute_url}}" role="button">Читать далее</a>
+          </p>
+          <hr class="my-4">
+        </div>
+    {% endfor %}
+  
+{% else %}
+    <li> 'Посты отсутствуют'
+{% endif %}
+
+{% endblock content %}
+
+
