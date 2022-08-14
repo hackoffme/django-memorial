@@ -1,5 +1,7 @@
 django
+djangorestframework
 django-stubs
 pillow
 django-debug-toolbar
 pytils
+mimesis

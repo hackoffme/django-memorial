@@ -1,7 +1,9 @@
 import logging
 from random import randint
+from time import sleep
 from django.db import migrations
 from pytils.translit import slugify
+from mimesis import Text
 # from django.contrib.auth.models import User
 from django.contrib.auth import get_user_model
 from data_admin.models import *
@@ -34,7 +36,7 @@ def set_data(apps, schema_editor):
              'от 111 - 120 км', 'от 121 - 127 км', 'Троице-Лыково',
              'с. Шелепиха', 'с. Перерва', 'другие сооружения', ]
     for item in areas:
-        print(slugify(item))
+        # print(slugify(item))
         Areas(title=item, slug=slugify(item)).save()
 
     tags = ['объекты и места ГУЛАГа', 'архитектура', 'инженерные сооружения',
@@ -42,24 +44,52 @@ def set_data(apps, schema_editor):
     for item in tags:
         Tags(title=item, slug=slugify(item)).save()
 
-    Users = get_user_model()
-    d = {'title': 'Идейные соображения высшего порядка, а также консультация с широким активом требует анализа существующий финансовых и административных условий',
-         'text': '<p>Прежде всего повышение уровня гражданского сознания играет важную роль в формировании прогресса профессионального общества. Таким образом управление и развитие структуры играет важную роль в формировании поставленных обществом и правительством задач. Следует отметить, что сложившаяся структура организации напрямую зависит от существующий финансовых и административных условий.</p>',
-         'lat': 1,
-         'lon': 1,
-         'current_user_id': 1
-         }
+    settings_admin = {'hi': 'Привет! Это телеграм бот канала им. Москвы! '
+                      'Наш проект был задуман как народная история '
+                      'великого памятника эпохи. Для запуска бота '
+                      'выберете одну из команд: /stayinghome чтобы '
+                      'путешествовать по истории сооружений канала'
+                      'не выходя из дома. /walkingaround узнайте '
+                      'историю конкретного места, расположенного '
+                      'ближе всего к Вам. Используйте команду '
+                      '/options чтобы настроить свой поиск. '
+                      'Если вам известно что-то из истории канала, '
+                      'и вы хотите вписать эти сведения в общий '
+                      'кадастр, используйте команду /stories. '}
+    for name, value in settings_admin.items():
+        SettingsAdmin(name=name, value=value).save()
 
+    Users = get_user_model()
+    flatr = Users.objects.get(username='flatr')
+    areas = Areas.objects.all()
+    tag = Tags.objects.all()
+
+    text = Text('ru')
+    for _ in range(1000):
+        title = text.text(quantity=1)
+        post = Posts(lat=randint(20, 90),
+                    lon=randint(20, 90), 
+                    area=areas[randint(1, len(areas)-1)],
+                    slug=slugify(title)+str(randint(10000,100000000)),
+                    current_user=flatr,
+                    title=title,
+                    text=text.text(quantity=4)
+                    )
+        tags=[]
+        for _ in range(randint(2, len(tag)-1)):
+            tags.append(tag[randint(1, len(tag)-1)])
+        post.save()
+        post.tag.set(tags)
 
 
 
 class Migration(migrations.Migration):
 
-    dependencies = [
+    dependencies=[
         ('data_admin', '0001_initial'),
     ]
 
-    operations = [
+    operations=[
         migrations.RunPython(generate_superuser),
         migrations.RunPython(set_data),
     ]

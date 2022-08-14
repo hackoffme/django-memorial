@@ -3,6 +3,20 @@ from django.contrib.auth.models import User
 from django.urls import reverse, reverse_lazy
 
 
+class SettingsAdmin(models.Model):
+    name = models.CharField(max_length=50,
+                            verbose_name='Название настройки')
+    value = models.TextField(verbose_name='Значение настройки')
+
+    class Meta:
+        verbose_name = 'Настройка'
+        verbose_name_plural = 'Настройки приложения'
+        ordering = ['id']
+
+    def __str__(self):
+        return self.name
+
+
 class Areas(models.Model):
     title = models.CharField(max_length=200,
                              verbose_name='Район поиска')
@@ -78,8 +92,6 @@ class Posts(models.Model):
     def get_absolute_url(self):
         return reverse("post_show", kwargs={"post_slug": self.slug})
 
-    
-
 
 class Images(models.Model):
     post = models.ForeignKey(Posts,
@@ -100,12 +112,24 @@ class Images(models.Model):
 class TgUsers(models.Model):
     tg_id = models.BigIntegerField(unique=True,
                                    verbose_name='ID Telegram')
-    viewed_posts = models.ForeignKey(Posts,
-                                     null=True,
-                                     on_delete=models.SET_NULL,
-                                     verbose_name='Просмотренные посты')
+    tag_settings = models.ManyToManyField(Tags,
+                                          blank=True,
+                                          verbose_name='Тэги')
+    area_settings = models.ManyToManyField(Areas,
+                                           blank=True,
+                                           verbose_name='Локации')
+    viewed_posts = models.ManyToManyField(Posts,
+                                          blank=True,
+                                          verbose_name='Просмотренные посты')
+    created_at = models.DateTimeField(auto_now_add=True,
+                                      verbose_name='Дата создания')
+    updated_at = models.DateTimeField(auto_now=True,
+                                      verbose_name='Дата обновления')
 
     class Meta:
         verbose_name = 'Пользователь телеграмм'
         verbose_name_plural = 'Пользователи телеграмм'
         ordering = ['id']
+
+    def __str__(self) -> str:
+        return str(self.tg_id)

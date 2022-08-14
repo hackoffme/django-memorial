@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.safestring import mark_safe
 from django.utils.html import format_html_join
 
-from data_admin.models import Areas, Tags, Images, Posts, TgUsers
+from data_admin.models import Areas, Tags, Images, Posts, TgUsers, SettingsAdmin
 # 'title', 'text', 'lat', 'lon', 'area', 'tag', 'current_user'
 
 admin.site.site_header = '«Панель управления проектом»'
@@ -40,7 +40,7 @@ class PostsAdmin(admin.ModelAdmin):
         # return mark_safe(f'<a href="https://yandex.ru/maps/?rtext=~{object.lat}%2C{object.lon}">Построить маршрут</a>')
         # return mark_safe(f"<div style='width: 300px; height: 200px;'> <script type='text/javascript' charset='utf-8' src='https://api-maps.yandex.ru/services/constructor/1.0/js/?um=constructor%3A053bd947d462cc1a45aeba4070defff75501905071c0eaf68436ac9976ec698c&amp;width=514&amp;height=326&amp;lang=ru_RU&amp;apikey=<API-ключ>'></script></div>")
 
-
+admin.site.register(SettingsAdmin)
 admin.site.register(TgUsers)
 admin.site.register(Areas)
 admin.site.register(Tags)
