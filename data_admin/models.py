@@ -121,6 +121,14 @@ class TgUsers(models.Model):
     viewed_posts = models.ManyToManyField(Posts,
                                           blank=True,
                                           verbose_name='Просмотренные посты')
+    lat = models.DecimalField(max_digits=17, decimal_places=15,
+                              null=True,
+                              blank=True,
+                              verbose_name='Широта')
+    lon = models.DecimalField(max_digits=17, decimal_places=14,
+                              null=True,
+                              blank=True,
+                              verbose_name='Долгота')
     created_at = models.DateTimeField(auto_now_add=True,
                                       verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True,

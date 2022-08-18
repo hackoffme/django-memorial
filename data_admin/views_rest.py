@@ -1,12 +1,12 @@
-from ast import Raise
 from random import randint
-from django.http import Http404
+from django import http
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
-from rest_framework import viewsets, views, generics, mixins, status
+from rest_framework import viewsets, views, generics, mixins, status, decorators
 
 from data_admin import models
 from data_admin import serializers
+from data_admin.utils import post as utils_post
 
 
 class PostForTg(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -14,38 +14,73 @@ class PostForTg(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     serializer_class = serializers.PostForTgSerializers
 
     def get_object(self):
-        assert self.lookup_url_kwarg in self.kwargs
-        # Получаем настройки пользователя
-        user_settgins = models.TgUsers.objects.filter(
-            tg_id=self.kwargs[self.lookup_url_kwarg]).first()
-        # Генерируем фильтры
-        filter = {'is_active': True}
-        filter_exclude = {}
-        if user_settgins:
-            filter.update({'area__in': user_settgins.area_settings.all(),
-                           'tag__in': user_settgins.tag_settings.all(),
-                           })
-            filter_exclude.update({'pk__in': user_settgins.viewed_posts.all()})
-        # Получаем список постов с учетом фильтров и уже просмотренных.
-        # Если постов для просмотров нет вызываем исключение
-        q = models.Posts.objects.filter(**filter).distinct()
-        if not q:
-            raise Http404
-        q = q.exclude(**filter_exclude).distinct()
-        if not q:
-            return models.Posts()
-        # Возвращаем рандомный пост
-        obj = q[randint(0, len(q)-1)]
+        # Получаем рандомный пост в соответсвии с настройками пользователя
+        # и уже просмотренными
+        tg_id = self.kwargs.get(self.lookup_url_kwarg, None)
+        if tg_id is None:
+            raise http.Http404
+
+        obj = utils_post.get_rnd_post(tg_id)
+
         self.check_object_permissions(self.request, obj)
-        if user_settgins:
-            user_settgins.viewed_posts.add(obj)
+        user_settings = models.TgUsers.objects.filter(tg_id=tg_id).first()
+        if user_settings:
+            user_settings.viewed_posts.add(obj)
         return obj
+
+    @decorators.action(detail=True, serializer_class=serializers.PostForTgSerializers)
+    def get_post_by_coordinates(self, request,  tg_id, **kwargs):
+        # метод возвращает пост по координатам пользователя
+        point = serializers.PointSerializers(data=request.data)
+        if not point.is_valid():
+            raise http.Http404
+        lat = point.data['lat']
+        lon = point.data['lon']
+        obj = utils_post.get_post_by_coordinates(tg_id=tg_id,
+                                                 lat=lat,
+                                                 lon=lon)
+        if not obj:
+            raise http.Http404
+        user_settings = models.TgUsers.objects.filter(tg_id=tg_id).first()
+        if user_settings:
+            user_settings.lat = lat
+            user_settings.lon = lon
+            user_settings.viewed_posts.add(obj)
+            user_settings.save()
+        return Response(self.get_serializer(obj).data)
+
+    @decorators.action(detail=True)
+    def get_post_by_saved_coordinates(self, request, tg_id, *args, **kwargs):
+        user_settings = models.TgUsers.objects.filter(tg_id=tg_id).first()
+        if not user_settings:
+            raise http.Http404
+        obj = utils_post.get_post_by_coordinates(tg_id, user_settings.lat, user_settings.lon)
+        user_settings.viewed_posts.add(obj)
+        return Response(self.get_serializer(obj).data)
 
 
 class UserTg(viewsets.ModelViewSet):
     queryset = models.TgUsers.objects.all()
     serializer_class = serializers.TgUsersSerializers
     lookup_field = 'tg_id'
+
+    def create(self, request, **kwargs):
+        try:
+            tg_id = int(request.data['tg_id'])
+        except ValueError:
+            raise http.Http404
+        except KeyError:
+            raise http.Http404
+        tg_user = models.TgUsers.objects.filter(tg_id=tg_id).first()
+        if tg_user:
+            return Response(status=200)
+
+        tg_user = models.TgUsers(tg_id=tg_id)
+        tg_user.save()
+        tg_user.tag_settings.set(models.Tags.objects.all())
+        tg_user.area_settings.set(models.Areas.objects.all())
+
+        return Response(status=201)
 
 
 class Area(views.APIView):

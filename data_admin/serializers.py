@@ -25,3 +25,7 @@ class SettingsAdminSerializers(serializers.ModelSerializer):
     class Meta:
         model = models.SettingsAdmin
         fields = '__all__'
+
+class PointSerializers(serializers.Serializer):
+    lat = serializers.FloatField()
+    lon = serializers.FloatField()
