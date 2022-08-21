@@ -66,7 +66,7 @@ def set_data(apps, schema_editor):
 
     text = Text('ru')
     for _ in range(1000):
-        title = text.text(quantity=1)
+        title = text.text(quantity=1)[:80]
         post = Posts(lat=randint(20, 90),
                     lon=randint(20, 90), 
                     area=areas[randint(1, len(areas)-1)],

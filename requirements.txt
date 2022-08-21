@@ -5,3 +5,4 @@ pillow
 django-debug-toolbar
 pytils
 mimesis
+psycopg2
