@@ -12,6 +12,9 @@ services:
     volumes:
       - .:/home/user/app
     depends_on:
+      db:
+        condition: service_healthy
+    links:
       - db
   db:
     image: postgres
@@ -21,4 +24,9 @@ services:
       - POSTGRES_DB=data_admin
       - POSTGRES_USER=flatr
       - POSTGRES_PASSWORD=flatr
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flatr -d data_admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 

@@ -1,6 +1,9 @@
 from django.db import models
+from tinymce import models as models_tinymce
 from django.contrib.auth.models import User
 from django.urls import reverse, reverse_lazy
+from django_admin_geomap import GeoItem
+import bleach
 
 
 class SettingsAdmin(models.Model):
@@ -51,14 +54,12 @@ class Tags(models.Model):
         return self.title
 
 
-class Posts(models.Model):
+class Posts(models.Model, GeoItem):
     title = models.CharField(max_length=200,
                              verbose_name='Заголовок')
-    text = models.TextField(verbose_name='Текст')
-    lat = models.DecimalField(max_digits=17, decimal_places=15,
-                              verbose_name='Широта')
-    lon = models.DecimalField(max_digits=17, decimal_places=14,
-                              verbose_name='Долгота')
+    text = models_tinymce.HTMLField(verbose_name='Текст')
+    lat = models.FloatField(verbose_name='Широта')
+    lon = models.FloatField(verbose_name='Долгота')
     area = models.ForeignKey(Areas,
                              blank=True,
                              to_field='id',
@@ -80,6 +81,18 @@ class Posts(models.Model):
                                       verbose_name='Дата обновления')
     slug = models.SlugField(max_length=255, unique=True,
                             db_index=True, verbose_name="URL")
+
+
+    
+
+
+    @property
+    def geomap_longitude(self):
+        return '' if self.lon is None else str(self.lon)
+
+    @property
+    def geomap_latitude(self):
+        return '' if self.lat is None else str(self.lat)
 
     class Meta:
         verbose_name = 'Пост'
@@ -121,12 +134,10 @@ class TgUsers(models.Model):
     viewed_posts = models.ManyToManyField(Posts,
                                           blank=True,
                                           verbose_name='Просмотренные посты')
-    lat = models.DecimalField(max_digits=17, decimal_places=15,
-                              null=True,
+    lat = models.FloatField(null=True,
                               blank=True,
                               verbose_name='Широта')
-    lon = models.DecimalField(max_digits=17, decimal_places=14,
-                              null=True,
+    lon = models.FloatField(null=True,
                               blank=True,
                               verbose_name='Долгота')
     created_at = models.DateTimeField(auto_now_add=True,

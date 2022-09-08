@@ -1,6 +1,5 @@
 import logging
 from random import randint
-from time import sleep
 from django.db import migrations
 from pytils.translit import slugify
 from mimesis import Text
@@ -63,12 +62,18 @@ def set_data(apps, schema_editor):
     flatr = Users.objects.get(username='flatr')
     areas = Areas.objects.all()
     tag = Tags.objects.all()
+    #home
+    # base_lat = 57.951503622198096
+    # base_lon = 102.74296108124477
+    #moskow
+    base_lat = 55.78124553340503
+    base_lon = 37.70503313373094
 
     text = Text('ru')
-    for _ in range(1000):
+    for _ in range(30):
         title = text.text(quantity=1)[:80]
-        post = Posts(lat=randint(20, 90),
-                    lon=randint(20, 90), 
+        post = Posts(lat=base_lat+randint(-100, 100)/10000,
+                    lon=base_lon+randint(-100, 100)/10000, 
                     area=areas[randint(1, len(areas)-1)],
                     slug=slugify(title)+str(randint(10000,100000000)),
                     current_user=flatr,
@@ -80,6 +85,17 @@ def set_data(apps, schema_editor):
             tags.append(tag[randint(1, len(tag)-1)])
         post.save()
         post.tag.set(tags)
+
+        images = []
+        
+        for _ in range(randint(0, 5)):
+            url = f'uploads/img/i ({randint(1,64)}).jpg'
+            img = Images(image=url)
+            img.save()
+            images.append(img)
+
+        post.images_set.set(images)
+        post.save()
 
 
 

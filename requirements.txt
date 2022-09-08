@@ -6,3 +6,7 @@ django-debug-toolbar
 pytils
 mimesis
 psycopg2
+django-admin-geomap
+geopy
+django-tinymce
+bleach

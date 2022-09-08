@@ -6,7 +6,7 @@ from rest_framework import viewsets, views, generics, mixins, status, decorators
 
 from data_admin import models
 from data_admin import serializers
-from data_admin.utils import post as utils_post
+from data_admin import utils
 
 
 class PostForTg(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -19,9 +19,7 @@ class PostForTg(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         tg_id = self.kwargs.get(self.lookup_url_kwarg, None)
         if tg_id is None:
             raise http.Http404
-
-        obj = utils_post.get_rnd_post(tg_id)
-
+        obj = utils.get_rnd_post(tg_id)
         self.check_object_permissions(self.request, obj)
         user_settings = models.TgUsers.objects.filter(tg_id=tg_id).first()
         if user_settings:
@@ -34,19 +32,20 @@ class PostForTg(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         point = serializers.PointSerializers(data=request.data)
         if not point.is_valid():
             raise http.Http404
-        lat = point.data['lat']
-        lon = point.data['lon']
-        obj = utils_post.get_post_by_coordinates(tg_id=tg_id,
+        lat = point.validated_data['lat']
+        lon = point.validated_data['lon']
+        obj = utils.get_post_by_coordinates(tg_id=tg_id,
                                                  lat=lat,
                                                  lon=lon)
         if not obj:
             raise http.Http404
         user_settings = models.TgUsers.objects.filter(tg_id=tg_id).first()
-        if user_settings:
-            user_settings.lat = lat
-            user_settings.lon = lon
-            user_settings.viewed_posts.add(obj)
-            user_settings.save()
+        if not user_settings:
+            user_settings = utils.create_user_by_id(tg_id=tg_id)
+        user_settings.lat = lat
+        user_settings.lon = lon
+        user_settings.viewed_posts.add(obj)
+        user_settings.save()
         return Response(self.get_serializer(obj).data)
 
     @decorators.action(detail=True)
@@ -54,7 +53,7 @@ class PostForTg(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         user_settings = models.TgUsers.objects.filter(tg_id=tg_id).first()
         if not user_settings:
             raise http.Http404
-        obj = utils_post.get_post_by_coordinates(tg_id, user_settings.lat, user_settings.lon)
+        obj = utils.get_post_by_coordinates(tg_id, user_settings.lat, user_settings.lon)
         user_settings.viewed_posts.add(obj)
         return Response(self.get_serializer(obj).data)
 
@@ -73,14 +72,16 @@ class UserTg(viewsets.ModelViewSet):
             raise http.Http404
         tg_user = models.TgUsers.objects.filter(tg_id=tg_id).first()
         if tg_user:
-            return Response(status=200)
+            ret = serializers.TgUsersSerializers(tg_user)
+            return Response(ret, status=200)
 
-        tg_user = models.TgUsers(tg_id=tg_id)
-        tg_user.save()
-        tg_user.tag_settings.set(models.Tags.objects.all())
-        tg_user.area_settings.set(models.Areas.objects.all())
-
-        return Response(status=201)
+        # tg_user = models.TgUsers(tg_id=tg_id)
+        # tg_user.save()
+        # tg_user.tag_settings.set(models.Tags.objects.all())
+        # tg_user.area_settings.set(models.Areas.objects.all())
+        tg_user = utils.create_user_by_id(tg_id=tg_id)
+        ret = serializers.TgUsersSerializers(tg_user)
+        return Response(ret.data, status=201)
 
 
 class Area(views.APIView):

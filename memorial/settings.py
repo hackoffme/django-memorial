@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'debug_toolbar',
+    'tinymce',
+    'django_admin_geomap',
     'data_admin.apps.DataAdminConfig',
 ]
 
@@ -61,7 +63,9 @@ ROOT_URLCONF = 'memorial.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            # BASE_DIR / 'data_admin/templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -81,18 +85,18 @@ WSGI_APPLICATION = 'memorial.wsgi.application'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # }, 
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'data_admin',
-        'USER': 'flatr',
-        'PASSWORD': 'flatr',
-        'HOST': 'db',
-        'PORT': '5432',
-    }
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    },
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.postgresql',
+    #     'NAME': 'data_admin',
+    #     'USER': 'flatr',
+    #     'PASSWORD': 'flatr',
+    #     'HOST': 'db',
+    #     'PORT': '5432',
+    # }
 }
 
 
@@ -131,6 +135,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# STATIC_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
@@ -150,9 +156,30 @@ REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.BasicAuthentication',],
-        # 'rest_framework.authentication.SessionAuthentication'],
+        'rest_framework.authentication.BasicAuthentication', ],
+    # 'rest_framework.authentication.SessionAuthentication'],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAdminUser'
     ]
+}
+
+
+TINYMCE_DEFAULT_CONFIG = {
+    "theme": "silver",
+    "height": 500,
+    "menubar": False,
+    "plugins": "autolink,link,codesample",
+    "toolbar": "undo redo |  bold italic strikethrough underline codesample  removeformat",
+
+    # "forced_root_block": "" ,
+    # "inline_styles": False,
+    "codesample_languages": [],
+
+    "formats": {
+            "bold":{"inline": "b"},
+            "underline":{"inline": "u"},
+            "italic":{"inline": "i"},
+            "strikethrough":{"inline": "s"},
+            "codesample":{"inline": "code"},
+    }
 }
