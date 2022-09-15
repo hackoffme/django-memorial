@@ -1,5 +1,5 @@
 from django.contrib import admin, auth
-from django_admin_geomap import ModelAdmin
+from django_admin_geomap import ModelAdmin as Model_Admin_Geomap
 from django.utils.safestring import mark_safe
 from django.utils.html import format_html_join
 from django.contrib.auth import get_permission_codename
@@ -10,7 +10,7 @@ from data_admin.models import Areas, Tags, Images, Posts, TgUsers, SettingsAdmin
 admin.site.site_header = '«Панель управления проектом»'
 admin.site.site_title = '«Админка»'
 admin.site.index_title = 'Добро пожаловать! В разделе посты добавляйте новый контент'
-
+admin.site.disable_action('delete_selected')
 
 class ImagesAdmin(admin.StackedInline):
     model = Images
@@ -22,13 +22,15 @@ class ImagesAdmin(admin.StackedInline):
 
 
 @admin.register(Posts)
-class PostsAdmin(ModelAdmin):
+class PostsAdmin(Model_Admin_Geomap):
+    # actions = []
     list_display = ('id', 'is_active', 'title',  'area',
                     'created_at', 'updated_at', 'current_user' )
     list_display_links = ('id', 'title')
     search_fields = ('title', 'text')
     
-    fields = ('title', 'slug', 'text', 'area', 'tag', 'current_user', ('lat', 'lon'))
+    fields = ('title', 'slug', 'text', 'area', 'tag', 'current_user', 'is_active', ('lat', 'lon'))
+    readonly_fields = ('current_user',)
     prepopulated_fields = {"slug": ("title",)}
 
     # filter_horizontal = ('tag',)
@@ -47,8 +49,7 @@ class PostsAdmin(ModelAdmin):
     def has_change_permission(self, request, obj=None):
         opts = self.opts
         codename = get_permission_codename("change", opts)
-        ##Дополнительная проверка для пользователей состоящих в группе 
-        ##имеющих право редактировать только свои посты
+        ##Права contributor. Запрещаем редактировать не свои посты
         if request.user.groups.filter(name=self.group_for_editing_your_posts).exists():
             if type(obj)==Posts:
                 if request.user == obj.current_user:
@@ -56,24 +57,43 @@ class PostsAdmin(ModelAdmin):
                 else:
                     return False
         return request.user.has_perm("%s.%s" % (opts.app_label, codename))
+    
 
-        
-
-    def get_form(self, request, obj=None, change=False, **kwargs):
-        form = super().get_form(request, obj,  change, **kwargs)
-        # if change:
-        #     for item in form.base_fields:
-        #         print(item)
-        #         pass
-        #     pass
+    def save_model(self, request, obj, form, change):
+        #При создании прикрепляем текущего пользователя
+        #Права contributor. Пост после изменения становится неактивным
         if not change:
-            form.base_fields['current_user'].initial = request.user
-            form.base_fields['current_user'].disabled = True
-        return form
- 
+            obj.current_user = request.user
+        if request.user.groups.filter(name=self.group_for_editing_your_posts).exists():
+            obj.is_active = False
+        obj.save()
+
+
+@admin.register(Tags)
+class TagsAdmin(admin.ModelAdmin):
+    fields = ('title', 'slug')
+    prepopulated_fields = {"slug": ("title",)}
+
+    def save_model(self, request, obj, form, change):
+        obj.save()
+        if not change:
+            for item in TgUsers.objects.all():
+                item.tag_settings.add(obj)
+
+
+@admin.register(Areas)
+class AreasAdmin(admin.ModelAdmin):
+    fields = ('title', 'slug')
+    prepopulated_fields = {"slug": ("title",)}
+
+    def save_model(self, request, obj, form, change):
+        obj.save()
+        if not change:
+            for item in TgUsers.objects.all():
+                item.area_settings.add(obj)   
+
+
 admin.site.register(SettingsAdmin)
 admin.site.register(TgUsers)
-admin.site.register(Areas)
-admin.site.register(Tags)
 admin.site.register(Images)
 

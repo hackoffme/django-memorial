@@ -1,9 +1,23 @@
+import re
 from django.db import models
-from tinymce import models as models_tinymce
+from django.urls import reverse
 from django.contrib.auth.models import User
-from django.urls import reverse, reverse_lazy
+from django.core.exceptions import ValidationError
+from django.core import validators
+
 from django_admin_geomap import GeoItem
+from tinymce import models as models_tinymce
+from PIL import Image
 import bleach
+
+
+def _clear_text_for_model(text):
+    text = bleach.clean(text,
+                        tags=['bold', 'strong', 'i', 'em', 'code', 's',
+                              'strike', 'del', 'u',  'br', 'a', 'br', 'p'],
+                        strip=True)
+    text = re.sub("^\s+|\n|\r|&nbsp;|\s+$", '', text)
+    return text
 
 
 class SettingsAdmin(models.Model):
@@ -22,9 +36,17 @@ class SettingsAdmin(models.Model):
 
 class Areas(models.Model):
     title = models.CharField(max_length=200,
+                             validators=[validators.MinLengthValidator(
+                                 5, "Минимум 5 символов")],
                              verbose_name='Район поиска')
     slug = models.SlugField(max_length=255, unique=True,
                             db_index=True, verbose_name="URL")
+
+    def clean(self):
+        self.title = bleach.clean(self.title, strip=True).strip()
+        if len(self.title) < 5:
+            raise ValidationError(
+                'После очистки текста от тэгов html осталось меньше 5 символов.')
 
     class Meta:
         verbose_name = 'Территория нахождения'
@@ -40,10 +62,18 @@ class Areas(models.Model):
 
 class Tags(models.Model):
     title = models.CharField(max_length=200,
+                             validators=[validators.MinLengthValidator(
+                                 5, 'Минимум 5 символов')],
                              unique=True,
                              verbose_name='Тэги')
     slug = models.SlugField(max_length=255, unique=True,
                             db_index=True, verbose_name="URL")
+
+    def clean(self):
+        self.title = bleach.clean(self.title, strip=True).strip()
+        if len(self.title) < 5:
+            raise ValidationError(
+                'После очистки текста от тэгов html осталось меньше 5 символов.')
 
     class Meta:
         verbose_name = 'Тэг'
@@ -82,9 +112,13 @@ class Posts(models.Model, GeoItem):
     slug = models.SlugField(max_length=255, unique=True,
                             db_index=True, verbose_name="URL")
 
-
-    
-
+    def clean(self):
+        self.text = _clear_text_for_model(self.text)
+        self.title = _clear_text_for_model(self.title)
+        if not self.text:
+            raise ValidationError('Текст статьи не заполнен')
+        if not self.title:
+            raise ValidationError('Заголовок не заполнен')
 
     @property
     def geomap_longitude(self):
@@ -112,9 +146,21 @@ class Images(models.Model):
                              null=True)
     image = models.ImageField(upload_to='uploads//%Y/%m/%d/',
                               verbose_name='Фотография')
+
     tg_id = models.BigIntegerField(blank=True,
                                    null=True,
                                    verbose_name='ID фото на сервере телеграм')
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        image = Image.open(self.image.path)
+        image.save(self.image.path, quality=80, optimize=True)
+
+    def delete(self, *args, **kwargs):
+        super().delete(*args, **kwargs)
+        self.image.delete(save=False)
+
+
 
     class Meta:
         verbose_name = 'Фотография'
@@ -135,11 +181,11 @@ class TgUsers(models.Model):
                                           blank=True,
                                           verbose_name='Просмотренные посты')
     lat = models.FloatField(null=True,
-                              blank=True,
-                              verbose_name='Широта')
+                            blank=True,
+                            verbose_name='Широта')
     lon = models.FloatField(null=True,
-                              blank=True,
-                              verbose_name='Долгота')
+                            blank=True,
+                            verbose_name='Долгота')
     created_at = models.DateTimeField(auto_now_add=True,
                                       verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True,
