@@ -15,7 +15,7 @@ urlpatterns = [
 
     path('api/v1/', include((router.urls, 'rest_api'),namespace='api')),
     path('api/v1/settings', views_rest.SettingsAdmin.as_view()),
-    path('api/v1/settings/areas/<int:tg_id>', views_rest.UserTgSettings.as_view()),
+    # path('api/v1/settings/areas/<int:tg_id>', views_rest.UserTgSettings.as_view()),
     path('api/v1/settings/areas/', views_rest.Area.as_view()),
     path('api/v1/settings/tags/', views_rest.Tag.as_view()),
     path('api/v1/post/<int:tg_id>/', views_rest.PostForTg.as_view({'get':'retrieve'})),

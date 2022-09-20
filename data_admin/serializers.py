@@ -18,7 +18,7 @@ class PostForTgSerializers(serializers.ModelSerializer):
         return text
     class Meta:
         model = models.Posts
-        exclude = ['id', 'is_active', 'created_at', 'updated_at', 'current_user' ]
+        exclude = ['is_active', 'created_at', 'updated_at', 'current_user' ]
         # depth =1 
 
 

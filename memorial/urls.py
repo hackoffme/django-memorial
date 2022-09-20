@@ -28,6 +28,7 @@ urlpatterns = [
     path('__debug__/', include('debug_toolbar.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
     path('', include('data_admin.urls')),
+    path('', include('like.urls'))
 ]
 
 if settings.DEBUG:

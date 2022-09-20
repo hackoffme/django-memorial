@@ -101,18 +101,18 @@ class SettingsAdmin(generics.ListAPIView):
     serializer_class = serializers.SettingsAdminSerializers
 
 
-class UserTgSettings(views.APIView):
-    def get(self, request, tg_id):
-        user = models.TgUsers.objects.filter(tg_id=tg_id).first()
-        if user is None:
-            ret = [{'slug': item.slug, 'title': item.title}
-                   for item in models.Areas.objects.all()]
-            return Response(ret)
-        ret = [{'slug': item.slug, 'title': item.title}
-               for item in user.area_settings.all()]
-        return Response(ret)
+# class UserTgSettings(views.APIView):
+#     def get(self, request, tg_id):
+#         user = models.TgUsers.objects.filter(tg_id=tg_id).first()
+#         if user is None:
+#             ret = [{'slug': item.slug, 'title': item.title}
+#                    for item in models.Areas.objects.all()]
+#             return Response(ret)
+#         ret = [{'slug': item.slug, 'title': item.title}
+#                for item in user.area_settings.all()]
+#         return Response(ret)
 
-    def post(self, request, tg_id):
-        serializer = serializers.TgUsersSerializers(data=request.data)
-        user = models.TgUsers.objects.filter(tg_id=tg_id).first()
-        return Response(status=201)
+    # def post(self, request, tg_id):
+    #     serializer = serializers.TgUsersSerializers(data=request.data)
+    #     user = models.TgUsers.objects.filter(tg_id=tg_id).first()
+    #     return Response(status=201)

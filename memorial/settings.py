@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DEBUG = False
+DEBUG = True
 
 if DEBUG:
     from .settings_debug import *
@@ -20,6 +20,8 @@ INSTALLED_APPS = [
     'tinymce',
     'django_admin_geomap',
     'data_admin.apps.DataAdminConfig',
+    'like.apps.LikeConfig',
+    
 ]
 
 MIDDLEWARE = [
