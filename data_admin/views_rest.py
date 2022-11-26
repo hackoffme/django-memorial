@@ -72,13 +72,9 @@ class UserTg(viewsets.ModelViewSet):
             raise http.Http404
         tg_user = models.TgUsers.objects.filter(tg_id=tg_id).first()
         if tg_user:
-            ret = serializers.TgUsersSerializers(tg_user)
-            return Response(ret, status=200)
-
-        # tg_user = models.TgUsers(tg_id=tg_id)
-        # tg_user.save()
-        # tg_user.tag_settings.set(models.Tags.objects.all())
-        # tg_user.area_settings.set(models.Areas.objects.all())
+            tg_user.delete()
+            # ret = serializers.TgUsersSerializers(tg_user)
+            # return Response(ret, status=200)
         tg_user = utils.create_user_by_id(tg_id=tg_id)
         ret = serializers.TgUsersSerializers(tg_user)
         return Response(ret.data, status=201)
@@ -101,18 +97,3 @@ class SettingsAdmin(generics.ListAPIView):
     serializer_class = serializers.SettingsAdminSerializers
 
 
-# class UserTgSettings(views.APIView):
-#     def get(self, request, tg_id):
-#         user = models.TgUsers.objects.filter(tg_id=tg_id).first()
-#         if user is None:
-#             ret = [{'slug': item.slug, 'title': item.title}
-#                    for item in models.Areas.objects.all()]
-#             return Response(ret)
-#         ret = [{'slug': item.slug, 'title': item.title}
-#                for item in user.area_settings.all()]
-#         return Response(ret)
-
-    # def post(self, request, tg_id):
-    #     serializer = serializers.TgUsersSerializers(data=request.data)
-    #     user = models.TgUsers.objects.filter(tg_id=tg_id).first()
-    #     return Response(status=201)
